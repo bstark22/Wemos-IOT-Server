@@ -1,0 +1,113 @@
+/*
+Update password and user name, and verify GPIO Pin configurations. Built as API for RPI Server to comunicate 
+with Wemos hardware (sensors, relays, etc.)
+*/
+
+#include <ESP8266WiFi.h>
+const int RelayPin = 5;
+const int SoilVCC = 15;
+const int SoilGND = 13;
+const char* ssid = "InsertWiFiName";
+const char* password = "InsertWIFIPassword";
+
+// Create an instance of the server
+// specify the port to listen on as an argument
+WiFiServer server(80);
+
+void setup() {
+
+  delay(5);
+
+  // Prepare GPIO, Flicker light
+  pinMode(RelayPin, OUTPUT);
+  pinMode(SoilVCC, OUTPUT);
+  pinMode(SoilGND, OUTPUT);
+  digitalWrite(RelayPin, LOW);
+  delay(3000);
+  digitalWrite(RelayPin,HIGH);
+  delay(3000);
+  digitalWrite(RelayPin,LOW);
+
+  // Connect to WiFi with credentials
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+  }
+
+
+  // Start the server
+  server.begin();
+  // Record IP Address
+  const char* IP = WiFi.localIP();
+  
+  digitalWrite(RelayPin, LOW);
+  delay(10);
+  digitalWrite(RelayPin,HIGH);
+  delay(6000);
+  digitalWrite(RelayPin,LOW);
+}
+
+void loop() {
+  String Vdisplay="n/a";
+  // Check if a client has connected
+  WiFiClient client = server.available();
+  if (!client) {
+    return;
+  }
+
+  // Wait until the client sends some data
+  while (!client.available()) {
+    delay(1);
+  }
+
+  // Read the first line of the request
+  String req = client.readStringUntil('\r');
+  client.flush();
+
+  // Match the request
+  int val; int runt;
+  if (req.indexOf("/gpio/0") != -1) {
+    val = 0;
+  } else if (req.indexOf("/gpio/1") != -1) {
+    val = 1;
+  } else if (req.indexOf("/run/1") != -1){
+    runt = 1;
+    digitalWrite(SoilVCC,HIGH);
+    digitalWrite(SoilGND,LOW);
+    double voltageSum=0;
+    delay(500);
+    for (int i=0; i <= 20; i++){
+      delay(50);
+      int sensorValue = analogRead(A0);
+      float voltage = sensorValue * (3.3 / 1023.0);
+      voltageSum += voltage;}
+   double voltageAvg= voltageSum/20;
+   digitalWrite(SoilVCC,LOW);
+   Vdisplay=String(voltageAvg);
+  } else if (req.indexOf("/run/0") != -1){
+    runt = 0;
+    
+  } else {
+    client.stop();
+    return;
+  }
+
+  // Set GPIO2 according to the request
+  digitalWrite(RelayPin, val);
+
+  client.flush();
+
+  // Prepare the response
+  String s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n "+val+
+
+  // Send the response to the client
+  client.print(s);
+  delay(1);
+  Serial.println("Client disonnected");
+
+  // The client will actually be disconnected
+  // when the function returns and 'client' object is detroyed
+}
