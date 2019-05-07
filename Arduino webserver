@@ -9,6 +9,7 @@ const int SoilVCC = 15;
 const int SoilGND = 13;
 const char* ssid = "InsertWiFiName";
 const char* password = "InsertWIFIPassword";
+int val; int runt;
 
 // Create an instance of the server
 // specify the port to listen on as an argument
@@ -41,7 +42,7 @@ void setup() {
   // Start the server
   server.begin();
   // Record IP Address
-  const char* IP = WiFi.localIP();
+  char IP = WiFi.localIP();
   
   digitalWrite(RelayPin, LOW);
   delay(10);
@@ -68,7 +69,6 @@ void loop() {
   client.flush();
 
   // Match the request
-  int val; int runt;
   if (req.indexOf("/gpio/0") != -1) {
     val = 0;
   } else if (req.indexOf("/gpio/1") != -1) {
@@ -106,7 +106,6 @@ void loop() {
   // Send the response to the client
   client.print(s);
   delay(1);
-  Serial.println("Client disonnected");
 
   // The client will actually be disconnected
   // when the function returns and 'client' object is detroyed
