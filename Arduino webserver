@@ -69,7 +69,6 @@ void loop() {
   client.flush();
 
 
-
   // Match the request
   
   if (req.indexOf("/gpio/0") != -1) {
@@ -108,7 +107,7 @@ else { L="NUL";}
   client.flush();
 
   // Prepare the response
-  String s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n ("+L+","+Vdisplay+")";
+  String s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n"+L+"|"+Vdisplay ;
 
   // Send the response to the client
   client.print(s);
@@ -117,4 +116,3 @@ else { L="NUL";}
   // The client will actually be disconnected
   // when the function returns and 'client' object is detroyed
 }
-
